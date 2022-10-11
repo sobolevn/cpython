@@ -71,7 +71,7 @@ jobs:
 
     - name: Install deps
       working-directory: ${{ env.CPYTHON_BUILDDIR }}
-      run: python -m pip install -r Tools/hypothesis/requirements.txt
+      run: python -m pip install -r ./Tools/hypothesis/requirements.txt
     - name: Run hypothesis tests
       working-directory: ${{ env.CPYTHON_BUILDDIR }}
       run: python -m unittest discover Tools/hypothesis/tests/
