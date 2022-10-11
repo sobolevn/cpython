@@ -5,6 +5,7 @@
 
 # You can set these variables from the command line.
 PYTHON       = python3
+VENVDIR      = ./venv
 
 .PHONY: venv test
 
