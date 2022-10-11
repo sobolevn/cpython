@@ -40,4 +40,4 @@ jobs:
     - name: 'Install dependencies'
       run: make -C Tools/hypothesis/ PYTHON=../python venv
     - name: Run hypothesis tests
-      run: ./python -m unittest discover ./Tools/hypothesis/tests/
+      run: make -C Tools/hypothesis/ PYTHON=../python test
