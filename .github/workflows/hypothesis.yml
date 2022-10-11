@@ -38,6 +38,6 @@ jobs:
       run: make -j4
 
     - name: 'Install dependencies'
-      run: make -C Tools/hypothesis/ PYTHON=../python venv
+      run: make -C Tools/hypothesis PYTHON=../../python venv
     - name: Run hypothesis tests
-      run: make -C Tools/hypothesis/ PYTHON=../python test
+      run: make -C Tools/hypothesis PYTHON=../../python test
