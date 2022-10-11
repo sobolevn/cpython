@@ -70,8 +70,6 @@ jobs:
       run: sudo mount $CPYTHON_RO_SRCDIR -oremount,rw
 
     - name: Install deps
-      working-directory: ${{ env.CPYTHON_BUILDDIR }}
-      run: ./python -m pip install -r ${GITHUB_WORKSPACE}/Tools/hypothesis/requirements.txt
+      run: ${CPYTHON_BUILDDIR}/python -m pip install -r ./Tools/hypothesis/requirements.txt
     - name: Run hypothesis tests
-      working-directory: ${{ env.CPYTHON_BUILDDIR }}
-      run: ./python -m unittest discover ${GITHUB_WORKSPACE}/Tools/hypothesis/tests/
+      run: ${CPYTHON_BUILDDIR}/python -m unittest discover ./Tools/hypothesis/tests/
