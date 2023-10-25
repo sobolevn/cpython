@@ -148,7 +148,7 @@ def format_exception(exc, /, value=_sentinel, tb=_sentinel, limit=None, \
     return list(te.format(chain=chain))
 
 
-def format_exception_only(exc, /, value=_sentinel):
+def format_exception_only(exc, /, value=_sentinel, *, show_group=False):
     """Format the exception part of a traceback.
 
     The return value is a list of strings, each ending in a newline.
@@ -162,7 +162,7 @@ def format_exception_only(exc, /, value=_sentinel):
     if value is _sentinel:
         value = exc
     te = TracebackException(type(value), value, None, compact=True)
-    return list(te.format_exception_only())
+    return list(te.format_exception_only(show_group=show_group))
 
 
 # -- not official API but folk probably use these two functions.
