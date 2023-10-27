@@ -1,12 +1,16 @@
-def raise_group():
+def test_syntax_error_with_note(cls, multiline=False):
     """
-    >>> raise_group()
-    Exception Group Traceback (most recent call last):
-    ...
-    ExceptionGroup: A (2 sub-exceptions)
-    ...
-    TypeError: 1
-    ...
-    ValueError: 2
+    >>> test_syntax_error_with_note(TabError, multiline=True)
+    Traceback (most recent call last):
+      ...
+    TabError: Two
+    error lines
+    Note
+    Line
     """
-    raise ExceptionGroup('A', [TypeError(1), ValueError(2)])
+    exc = cls(
+        "Two\nerror lines" if multiline else "error",
+        ("x.py", 23, None, "bad syntax"),
+    )
+    exc.add_note('Note\nLine' if multiline else 'Note')
+    raise exc
