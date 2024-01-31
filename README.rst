@@ -13,6 +13,7 @@ This is Python version 3.13.0 alpha 3
    :alt: Python Discourse chat
    :target: https://discuss.python.org/
 
+HI!
 
 Copyright © 2001-2024 Python Software Foundation.  All rights reserved.
 
