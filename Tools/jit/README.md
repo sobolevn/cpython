@@ -1,4 +1,4 @@
-The JIT Compiler
+The JIT Compiler!
 ================
 
 This version of CPython can be built with an experimental just-in-time compiler. While most everything you already know about building and using CPython is unchanged, you will probably need to install a compatible version of LLVM first.
