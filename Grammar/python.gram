@@ -218,15 +218,17 @@ import_from_targets[asdl_alias_seq*]:
 import_from_as_names[asdl_alias_seq*]:
     | a[asdl_alias_seq*]=','.import_from_as_name+ { a }
 import_from_as_name[alias_ty]:
-    | a=NAME b=['as' z=NAME { z }] { _PyAST_alias(a->v.Name.id,
-                                               (b) ? ((expr_ty) b)->v.Name.id : NULL,
-                                               EXTRA) }
+    | a=NAME 'as' b=NAME &(',' | ')' | NEWLINE) { 
+        _PyAST_alias(a->v.Name.id, b->v.Name.id, EXTRA) }
+    | invalid_import_from_as_name
+    | a=NAME { _PyAST_alias(a->v.Name.id, NULL, EXTRA) }
 dotted_as_names[asdl_alias_seq*]:
     | a[asdl_alias_seq*]=','.dotted_as_name+ { a }
 dotted_as_name[alias_ty]:
-    | a=dotted_name b=['as' z=NAME { z }] { _PyAST_alias(a->v.Name.id,
-                                                      (b) ? ((expr_ty) b)->v.Name.id : NULL,
-                                                      EXTRA) }
+    | a=dotted_name 'as' b=NAME &(',' | NEWLINE) { 
+        _PyAST_alias(a->v.Name.id, b->v.Name.id, EXTRA) }
+    | invalid_dotted_as_name
+    | a=dotted_name { _PyAST_alias(a->v.Name.id, NULL, EXTRA) }
 dotted_name[expr_ty]:
     | a=dotted_name '.' b=NAME { _PyPegen_join_names_with_dot(p, a, b) }
     | NAME
@@ -1321,6 +1323,14 @@ invalid_import_from_targets:
         RAISE_SYNTAX_ERROR("trailing comma not allowed without surrounding parentheses") }
     | token=NEWLINE { 
         RAISE_SYNTAX_ERROR_STARTING_FROM(token, "Expected one or more names after 'import'") }
+invalid_dotted_as_name:
+    | dotted_name 'as' a=expression {
+        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, 
+            "cannot use %s as import target", _PyPegen_get_expr_name(a)) }
+invalid_import_from_as_name:
+    | NAME 'as' a=expression {
+        RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, 
+            "cannot use %s as import target", _PyPegen_get_expr_name(a)) }
 
 invalid_with_stmt:
     | ['async'] 'with' ','.(expression ['as' star_target])+ NEWLINE { RAISE_SYNTAX_ERROR("expected ':'") }

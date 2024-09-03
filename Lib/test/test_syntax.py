@@ -1832,6 +1832,56 @@ SyntaxError: Expected one or more names after 'import'
 Traceback (most recent call last):
 SyntaxError: Expected one or more names after 'import'
 
+>>> import a as b.c
+Traceback (most recent call last):
+SyntaxError: cannot use attribute as import target
+
+>>> import a.b as (a, b)
+Traceback (most recent call last):
+SyntaxError: cannot use tuple as import target
+
+>>> import a, a.b as 1
+Traceback (most recent call last):
+SyntaxError: cannot use literal as import target
+
+>>> import a.b as 'a', a
+Traceback (most recent call last):
+SyntaxError: cannot use literal as import target
+
+>>> from a import (b as c.d)
+Traceback (most recent call last):
+SyntaxError: cannot use attribute as import target
+
+>>> from a import b as 1
+Traceback (most recent call last):
+SyntaxError: cannot use literal as import target
+
+>>> from a import (
+...   b as f())
+Traceback (most recent call last):
+SyntaxError: cannot use function call as import target
+
+>>> from a import (
+...   b as [],
+... )
+Traceback (most recent call last):
+SyntaxError: cannot use list as import target
+
+>>> from a import (
+...   b,
+...   c as ()
+... )
+Traceback (most recent call last):
+SyntaxError: cannot use tuple as import target
+
+>>> from a import b, с as d[e]
+Traceback (most recent call last):
+SyntaxError: cannot use subscript as import target
+
+>>> from a import с as d[e], b
+Traceback (most recent call last):
+SyntaxError: cannot use subscript as import target
+
 >>> (): int
 Traceback (most recent call last):
 SyntaxError: only single target (not tuple) can be annotated
@@ -2855,6 +2905,26 @@ while 1:
             end_lineno=3,
             offset=15,
             end_offset=15 + len("obj.attr"),
+        )
+
+    def test_invalid_import_stmt_as_expr(self):
+        self._check_error(
+            "import a as obj.attr",
+            errtext="cannot use attribute as import target",
+            lineno=1,
+            end_lineno=1,
+            offset=13,
+            end_offset=13 + len("obj.attr"),
+        )
+
+    def test_invalid_import_from_stmt_as_expr(self):
+        self._check_error(
+            "from a import b as obj.attr",
+            errtext="cannot use attribute as import target",
+            lineno=1,
+            end_lineno=1,
+            offset=20,
+            end_offset=20 + len("obj.attr"),
         )
 
 
