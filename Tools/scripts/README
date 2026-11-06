@@ -7,6 +7,7 @@ divmod_threshold.py       Determine threshold for switching from longobject.c
 idle3                     Main program to start IDLE
 pydoc3                    Python documentation browser
 run_tests.py              Run the test suite with more sensible default options
+re_bench.py               Benchmark stdlib re features over multiple input sizes
 summarize_stats.py        Summarize specialization stats for all files in the
                           default stats folders
 var_access_benchmark.py   Show relative speeds of local, nonlocal, global,
