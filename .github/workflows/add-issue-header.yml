@@ -20,7 +20,7 @@ jobs:
       issues: write
     timeout-minutes: 5
     steps:
-      - uses: actions/github-script@v7
+      - uses: actions/github-script@v9
         with:
           # language=JavaScript
           script: |
