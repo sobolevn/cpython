@@ -243,6 +243,43 @@ SRE(charset_loc_ignore)(SRE_STATE* state, const SRE_CODE* set, SRE_CODE ch)
 }
 
 LOCAL(Py_ssize_t) SRE(match)(SRE_STATE* state, const SRE_CODE* pattern, int toplevel);
+#if _Py_TAIL_CALL_INTERP
+#   if defined(_MSC_VER) && !defined(__clang__)
+#       if _MSC_VER < 1950
+#           error "You need at least VS 2026 / PlatformToolset v145 for tail calling."
+#           define SRE_PY_MUSTTAIL
+#           define SRE_PY_PRESERVE_NONE_CC
+#       else
+#           define SRE_PY_MUSTTAIL [[msvc::musttail]]
+#           define SRE_PY_PRESERVE_NONE_CC __preserve_none
+#       endif
+#   elif defined(__clang__) || defined(__GNUC__)
+#       if _Py__has_attribute(preserve_none) && _Py__has_attribute(musttail)
+#           define SRE_PY_MUSTTAIL __attribute__((musttail))
+#           define SRE_PY_PRESERVE_NONE_CC __attribute__((preserve_none))
+#       else
+#           error "This compiler does not have support for efficient tail calling."
+#           define SRE_PY_MUSTTAIL
+#           define SRE_PY_PRESERVE_NONE_CC
+#       endif
+#   else
+#       error "This compiler does not have support for efficient tail calling."
+#       define SRE_PY_MUSTTAIL
+#       define SRE_PY_PRESERVE_NONE_CC
+#   endif
+#else
+#   define SRE_PY_MUSTTAIL
+#   define SRE_PY_PRESERVE_NONE_CC
+#endif
+
+#if _Py_TAIL_CALL_INTERP
+LOCAL(Py_ssize_t) SRE_PY_PRESERVE_NONE_CC
+SRE(match_dispatch)(SRE_STATE* state, const SRE_CODE* pattern, int toplevel,
+                    Py_ssize_t start_ctx_pos, unsigned int sigcount);
+#else
+LOCAL(Py_ssize_t) SRE_PY_PRESERVE_NONE_CC
+SRE(match_dispatch)(SRE_STATE* state, const SRE_CODE* pattern, int toplevel);
+#endif
 
 LOCAL(Py_ssize_t)
 SRE(count)(SRE_STATE* state, const SRE_CODE* pattern, Py_ssize_t maxcount)
@@ -574,6 +611,21 @@ do { \
 #define JUMP_POSS_REPEAT_2   15
 #define JUMP_ATOMIC_GROUP    16
 
+#if _Py_TAIL_CALL_INTERP
+#define DO_JUMPX(jumpvalue, jumplabel, nextpattern, toplevel_) \
+    ctx->pattern = pattern; \
+    ctx->ptr = ptr; \
+    DATA_ALLOC(SRE(match_context), nextctx); \
+    nextctx->pattern = nextpattern; \
+    nextctx->toplevel = toplevel_; \
+    nextctx->jump = jumpvalue; \
+    nextctx->last_ctx_pos = ctx_pos; \
+    SRE_PY_MUSTTAIL return SRE(match_dispatch)( \
+        state, nextpattern, toplevel_, alloc_pos, sigcount); \
+    jumplabel: \
+    pattern = ctx->pattern; \
+    ptr = ctx->ptr;
+#else
 #define DO_JUMPX(jumpvalue, jumplabel, nextpattern, toplevel_) \
     ctx->pattern = pattern; \
     ctx->ptr = ptr; \
@@ -589,6 +641,7 @@ do { \
     jumplabel: \
     pattern = ctx->pattern; \
     ptr = ctx->ptr;
+#endif
 
 #define DO_JUMP(jumpvalue, jumplabel, nextpattern) \
     DO_JUMPX(jumpvalue, jumplabel, nextpattern, ctx->toplevel)
@@ -661,11 +714,28 @@ typedef struct {
 LOCAL(Py_ssize_t)
 SRE(match)(SRE_STATE* state, const SRE_CODE* pattern, int toplevel)
 {
+#if _Py_TAIL_CALL_INTERP
+    return SRE(match_dispatch)(state, pattern, toplevel, -1, state->sigcount);
+#else
+    return SRE(match_dispatch)(state, pattern, toplevel);
+#endif
+}
+
+LOCAL(Py_ssize_t) SRE_PY_PRESERVE_NONE_CC
+#if _Py_TAIL_CALL_INTERP
+SRE(match_dispatch)(SRE_STATE* state, const SRE_CODE* pattern, int toplevel,
+                    Py_ssize_t start_ctx_pos, unsigned int sigcount)
+#else
+SRE(match_dispatch)(SRE_STATE* state, const SRE_CODE* pattern, int toplevel)
+#endif
+{
     const SRE_CHAR* end = (const SRE_CHAR *)state->end;
     Py_ssize_t alloc_pos, ctx_pos = -1;
     Py_ssize_t ret = 0;
     int jump;
+#if !_Py_TAIL_CALL_INTERP
     unsigned int sigcount = state->sigcount;
+#endif
 
     SRE(match_context)* ctx;
     SRE(match_context)* nextctx;
@@ -673,17 +743,28 @@ SRE(match)(SRE_STATE* state, const SRE_CODE* pattern, int toplevel)
 
     TRACE(("|%p|%p|ENTER\n", pattern, state->ptr));
 
-    DATA_ALLOC(SRE(match_context), ctx);
-    ctx->last_ctx_pos = -1;
-    ctx->jump = JUMP_NONE;
-    ctx->toplevel = toplevel;
-    ctx_pos = alloc_pos;
+#if _Py_TAIL_CALL_INTERP
+    if (start_ctx_pos >= 0) {
+        ctx_pos = start_ctx_pos;
+        DATA_LOOKUP_AT(SRE(match_context), ctx, ctx_pos);
+    }
+    else
+#endif
+    {
+        DATA_ALLOC(SRE(match_context), ctx);
+        ctx->last_ctx_pos = -1;
+        ctx->jump = JUMP_NONE;
+        ctx->toplevel = toplevel;
+        ctx_pos = alloc_pos;
+    }
 
 #if USE_COMPUTED_GOTOS
 #include "sre_targets.h"
 #endif
 
+#if !_Py_TAIL_CALL_INTERP
 entrance:
+#endif
 
     ;  // Fashion statement.
     const SRE_CHAR *ptr = (SRE_CHAR *)state->ptr;
